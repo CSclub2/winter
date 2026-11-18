@@ -189,3 +189,134 @@ footer{background:var(--g);color:var(--b);text-align:center;padding:28px}
 <div id="stg"></div><div id="toast"></div><canvas id="cf"></canvas>
 
 <script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),rnd=a=>a[Math.random()*a.length|0];
+const DEF={plans:[],cur:null,teams:[],cp:[],wheel:[],sel:null,rank:{}};
+let S=JSON.parse(JSON.stringify(DEF));try{Object.assign(S,JSON.parse(localStorage.getItem('lw1')||'{}'))}catch(e){}
+const sv=()=>{try{localStorage.setItem('lw1',JSON.stringify(S))}catch(e){}};
+function toast(t,e){const d=$('#toast');d.textContent=t;d.className=e?'e':'';d.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>d.style.display='none',2600)}
+const PAL=['#263C32','#D8C4A3','#A66B45','#713B39','#F5EFE4'];
+const ink=c=>(c==='#D8C4A3'||c==='#F5EFE4')?'#263C32':'#F5EFE4';
+function confetti(){const c=$('#cf'),x=c.getContext('2d');c.width=innerWidth;c.height=innerHeight;const P=Array.from({length:120},()=>({x:Math.random()*c.width,y:-20,v:2+Math.random()*4,r:5+Math.random()*6,c:rnd(PAL.slice(1)),s:Math.random()*3-1.5}));let f=0;(function a(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.y+=p.v;p.x+=p.s;x.fillStyle=p.c;x.fillRect(p.x,p.y,p.r,p.r*1.5)});if(++f<170)requestAnimationFrame(a);else x.clearRect(0,0,c.width,c.height)})()}
+const A={};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b&&A[b.dataset.a])A[b.dataset.a](b)});
+document.addEventListener('change',e=>{const b=e.target.closest('[data-ch]');if(b&&A[b.dataset.ch])A[b.dataset.ch](b)});
+/* hero fx */
+(()=>{let h='';for(let i=0;i<60;i++)h+=`<circle class="tw" cx="${Math.random()*1200|0}" cy="${Math.random()*330|0}" r="${Math.random()*1.8+.5}" style="animation-delay:${Math.random()*3}s"/>`;$('#stars').innerHTML=h;for(let i=0;i<30;i++){const d=document.createElement('i');d.className='sn';d.style.cssText=`left:${Math.random()*100}%;animation-duration:${6+Math.random()*8}s;animation-delay:${-Math.random()*10}s`;$('#hero').appendChild(d)}})();
+const io=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('on')),{threshold:.08});$$('.rv').forEach(e=>io.observe(e));
+/* types */
+A.pt=b=>{$('#pty').value=b.dataset.k;$('#plan').scrollIntoView()};
+/* plan */
+const cp=()=>S.plans.find(p=>p.id===S.cur);let editP=null;
+const TK=()=>[['جلسة','تجهيز الفرش والوسائد'],['جلسة','تجهيز البطانيات'],['جلسة','ترتيب الإضاءة'],['جلسة','مكان النار والحطب (عند ملاءمة المكان)'],['جلسة','تجهيز الطاولات'],['ضيافة','القهوة والشاي'],['ضيافة','المشروبات الساخنة'],['ضيافة','الحلويات'],['ضيافة','الوجبات'],['ضيافة','المياه والمستلزمات'],['أنشطة','تجهيز المسابقات'],['أنشطة','تجهيز الجوائز'],['أنشطة','إعداد قائمة الفرق'],['أنشطة','تجهيز أدوات الألعاب'],['أنشطة','إعداد جدول الفعاليات']].map(x=>({id:uid(),g:x[0],n:x[1],d:false}));
+const SC=()=>[['19:00','استقبال الحضور'],['19:30','القهوة والضيافة'],['20:00','اللعبة الأولى'],['20:30','المسابقات'],['21:00','العشاء'],['22:00','التحديات الجماعية'],['23:00','إعلان الفائزين']].map(x=>({id:uid(),t:x[0],n:x[1],d:false}));
+A.psave=()=>{const n=$('#pn').value.trim(),d=$('#pd').value,s=$('#ps').value,c=+$('#pc').value;if(!n){toast('اكتب اسم الجمعة','e');return}if(!d){toast('حدد التاريخ','e');return}if(!s){toast('حدد وقت البداية','e');return}if(!(c>0)){toast('أدخل عدد الحضور','e');return}
+const o={n,ty:$('#pty').value,d,s,e:$('#pe').value,c,pl:$('#pp').value.trim(),ds:$('#pds').value.trim()};
+if(editP){Object.assign(S.plans.find(x=>x.id===editP),o);A.pcancel()}else{const p={id:uid(),...o,tasks:TK(),sc:SC()};S.plans.push(p);S.cur=p.id;['#pn','#pp','#pds','#pc'].forEach(k=>$(k).value='')}
+sv();rPlan();toast('تم حفظ الخطة ✅')};
+A.pcancel=()=>{editP=null;$('#psb').textContent='حفظ الخطة';$('#pcb').hidden=true};
+A.pedit=()=>{const p=cp();if(!p){toast('لا توجد خطة','e');return}editP=p.id;$('#pn').value=p.n;$('#pty').value=p.ty;$('#pd').value=p.d;$('#ps').value=p.s;$('#pe').value=p.e;$('#pc').value=p.c;$('#pp').value=p.pl;$('#pds').value=p.ds;$('#psb').textContent='حفظ التعديل';$('#pcb').hidden=false;$('#pn').scrollIntoView({block:'center'})};
+A.pdel=()=>{const p=cp();if(!p){toast('لا توجد خطة','e');return}if(confirm('حذف الخطة «'+p.n+'» نهائيًا؟')){S.plans=S.plans.filter(x=>x!==p);S.cur=S.plans[0]?S.plans[0].id:null;sv();rPlan()}};
+A.psw=b=>{S.cur=b.value;sv();rPlan()};
+function rPlan(){const p=cp();$('#psel').innerHTML=S.plans.map(x=>`<option value="${x.id}" ${x.id===S.cur?'selected':''}>${esc(x.n)}</option>`).join('');$('#pv').hidden=!p;$('#pe0').hidden=!!p;if(!p)return;
+const T=p.tasks,dn=T.filter(t=>t.d).length,pc=T.length?Math.round(dn/T.length*100):0,N={w:'نسائية',y:'شباب',f:'عائلية'};
+$('#pdet').innerHTML=`<h3 style="font-size:1.8rem">${esc(p.n)}</h3><p>🏷️ ${N[p.ty]} · 📅 ${p.d} · 🕖 ${p.s}${p.e?' – '+p.e:''} · 👥 ${p.c} · 📍 ${esc(p.pl||'—')}</p>${p.ds?`<p>${esc(p.ds)}</p>`:''}`;
+$('#pbar').style.width=pc+'%';$('#ppc').textContent=`نسبة الإنجاز: ${pc}% (${dn}/${T.length})`;
+$('#tks').innerHTML=[...new Set(T.map(t=>t.g))].map(g=>`<h4>${esc(g)}</h4>`+T.filter(t=>t.g===g).map(t=>`<div class="row ${t.d?'dn':''}"><input type="checkbox" ${t.d?'checked':''} data-ch="tk" data-i="${t.id}"><span>${esc(t.n)}</span><button data-a="te" data-i="${t.id}" title="تعديل">✎</button><button data-a="tx" data-i="${t.id}" title="حذف">×</button></div>`).join('')).join('');
+$('#scs').innerHTML=p.sc.map(s=>`<div class="row ${s.d?'dn':''}"><input type="checkbox" ${s.d?'checked':''} data-ch="sk" data-i="${s.id}"><input type="time" value="${s.t}" data-ch="stt" data-i="${s.id}"><span>${esc(s.n)}</span><button data-a="su" data-i="${s.id}">↑</button><button data-a="sdn" data-i="${s.id}">↓</button><button data-a="se" data-i="${s.id}">✎</button><button data-a="sx" data-i="${s.id}">×</button></div>`).join('')||'<p>لا توجد فعاليات.</p>'}
+const tk=b=>cp().tasks.find(t=>t.id===b.dataset.i),sk=b=>cp().sc.find(t=>t.id===b.dataset.i);
+A.tk=b=>{tk(b).d=b.checked;sv();rPlan()};A.sk=b=>{sk(b).d=b.checked;sv();rPlan()};A.stt=b=>{if(!b.value){toast('وقت غير صالح','e');return}sk(b).t=b.value;sv()};
+A.te=b=>{const t=tk(b),v=prompt('تعديل المهمة:',t.n);if(v&&v.trim()){t.n=v.trim();sv();rPlan()}};
+A.tx=b=>{const p=cp();p.tasks=p.tasks.filter(t=>t.id!==b.dataset.i);sv();rPlan()};
+A.tadd=()=>{const v=$('#tni').value.trim();if(!v){toast('اكتب المهمة','e');return}cp().tasks.push({id:uid(),g:$('#tgs').value,n:v,d:false});$('#tni').value='';sv();rPlan()};
+A.se=b=>{const s=sk(b),v=prompt('عنوان الفعالية:',s.n);if(v&&v.trim()){s.n=v.trim();sv();rPlan()}};
+A.sx=b=>{const p=cp();p.sc=p.sc.filter(t=>t.id!==b.dataset.i);sv();rPlan()};
+A.sadd=()=>{const v=$('#sni').value.trim(),t=$('#sti').value;if(!v||!t){toast('أدخل الوقت والعنوان','e');return}cp().sc.push({id:uid(),t,n:v,d:false});$('#sni').value='';sv();rPlan()};
+const mv=(b,d)=>{const a=cp().sc,i=a.findIndex(x=>x.id===b.dataset.i),j=i+d;if(j<0||j>=a.length)return;[a[i],a[j]]=[a[j],a[i]];sv();rPlan()};
+A.su=b=>mv(b,-1);A.sdn=b=>mv(b,1);A.ssort=()=>{cp().sc.sort((a,b)=>a.t.localeCompare(b.t));sv();rPlan()};
+/* teams */
+const EM=['🦊','🐺','🦅','🐎','🔥','⭐','☕','🏔️'];let editT=null,pk={e:EM[0],c:PAL[2]};
+
+$('#se').innerHTML=EM.map(e=>`<button data-a="pe" data-e="${e}">${e}</button>`).join('');$('#sc2').innerHTML=PAL.map(c=>`<button data-a="pc" data-c="${c}" style="background:${c}"></button>`).join('');
+function pkr(){$$('#se button').forEach(b=>b.classList.toggle('on',b.dataset.e===pk.e));$$('#sc2 button').forEach(b=>b.classList.toggle('on',b.dataset.c===pk.c))}pkr();
+A.pe=b=>{pk.e=b.dataset.e;pkr()};A.pc=b=>{pk.c=b.dataset.c;pkr()};
+A.tcancel=()=>{editT=null;['#tn','#tld','#tmb'].forEach(s=>$(s).value='');$('#tsb').textContent='إضافة الفريق';$('#tcb').hidden=true};
+A.tsave=()=>{const n=$('#tn').value.trim();if(!n){toast('اكتب اسم الفريق','e');return}const m=$('#tmb').value.split(/[,،\n]/).map(x=>x.trim()).filter(Boolean),l=$('#tld').value.trim();
+if(editT)Object.assign(S.teams.find(x=>x.id===editT),{n,l,m,e:pk.e,c:pk.c});else{const t={id:uid(),n,l,m,e:pk.e,c:pk.c,p:0,ok:0,w:0};S.teams.push(t);if(S.sel)S.sel.push(t.id)}
+A.tcancel();sv();rAll();toast('تم حفظ الفريق ✅')};
+A.tedit=b=>{const t=S.teams.find(x=>x.id===b.dataset.i);editT=t.id;$('#tn').value=t.n;$('#tld').value=t.l;$('#tmb').value=t.m.join('، ');pk={e:t.e,c:t.c};pkr();$('#tsb').textContent='حفظ التعديل';$('#tcb').hidden=false;$('#teams').scrollIntoView()};
+A.tdel=b=>{const t=S.teams.find(x=>x.id===b.dataset.i);if(confirm('حذف الفريق «'+t.n+'»؟')){S.teams=S.teams.filter(x=>x!==t);if(S.sel)S.sel=S.sel.filter(i=>i!==t.id);sv();rAll()}};
+function rTeams(){$('#tl').innerHTML=S.teams.length?S.teams.map(t=>`<div class="tm" style="background:${t.c};color:${ink(t.c)}"><div class="pt">${t.p}</div><div class="ic">${t.e}</div><h3 style="font-size:1.5rem">${esc(t.n)}</h3><small>القائد: ${esc(t.l||'—')}</small><small>الأعضاء (${t.m.length}): ${esc(t.m.join('، ')||'—')}</small><div style="margin-top:10px;display:flex;gap:8px"><button class="btn s o" data-a="tedit" data-i="${t.id}">تعديل</button><button class="btn s o" data-a="tdel" data-i="${t.id}">حذف</button></div></div>`).join(''):'<p style="margin-top:20px">لا توجد فرق بعد. أضف فريقك الأول!</p>';
+const ids=selIds();$('#sel').innerHTML=S.teams.length?S.teams.map(t=>`<label><input type="checkbox" data-ch="sl" data-i="${t.id}" ${ids.includes(t.id)?'checked':''}>${t.e} ${esc(t.n)}</label>`).join(''):'<small>سجّل فريقًا أولًا</small>'}
+const selIds=()=>(S.sel||S.teams.map(t=>t.id)).filter(i=>S.teams.some(t=>t.id===i));
+A.sl=()=>{S.sel=$$('#sel input:checked').map(x=>x.dataset.i);sv()};
+/* leaderboard */
+function rBoard(){
+const s=S.teams.slice().sort((a,b)=>b.p-a.p||b.ok-a.ok),np={};
+s.forEach((t,i)=>np[t.id]=i);
+const medals=['🥇','🥈','🥉'];
+$('#pod').innerHTML=s.length?s.map((t,i)=>`<div class="team-result-card" style="background:${i===0?'#E9D9BD':t.c};color:${i===0?'var(--g)':ink(t.c)}">
+<div class="pod-medal">${medals[i]||'🏅'}</div>
+<div class="pod-emoji">${t.e}</div>
+<b class="pod-name">${esc(t.n)}</b>
+<div class="pod-rank">${i===0?'المركز الأول':'المركز '+(i+1)}</div>
+<div class="pod-points">${t.p} نقطة</div>
+<div class="pod-stats"><span>✅ ${t.ok} إجابة صحيحة</span><span>🏆 ${t.w} انتصار</span></div>
+</div>`).join(''):'<p>أضف فرقًا والعب لتظهر النتائج.</p>';
+$('#rows').innerHTML='';
+const f=s[0]&&s[0].p>0?s[0].id:null;
+if(f&&S.rank._f!==f)confetti();
+S.rank=np;S.rank._f=f;sv();
+}
+A.rsc=()=>{if(confirm('إعادة ضبط نقاط كل الفرق؟')){S.teams.forEach(t=>t.p=t.ok=t.w=0);S.rank={};sv();rAll();toast('تمت إعادة الضبط')}};
+/* games data */
+const GM={trivia:['من يعرف أكثر؟','🧠','ثقافة عامة وعلوم وجغرافيا بمؤقت.',20],cha:['تمثيل بدون كلام','🎭','مثّل الكلمة والفريق يخمن. اختر المستوى.',60],img:['خمن الصورة','🖼️','صورة مموّهة تنكشف تدريجيًا.',25],scr:['كلمة مبعثرة','🔤','رتّب الحروف مع تلميح اختياري.',30],who:['من أنا؟','🕵️','تلميحات متتابعة، كلما قلّت زادت النقاط.',30],mem:['تحدي الذاكرة','🃏','اقلب البطاقات وطابق الأزواج.',0],tf:['صح أم خطأ','✅','عبارات مع معلومة بعد الإجابة.',15],prov:['أكمل العبارة','📜','أمثال شعبية، ويمكنك إضافة أمثالك.',20],speed:['تحدي السرعة','⚡','أسئلة سريعة بوقت قصير.',8],forb:['ممنوع تقول!','🚫','اشرح الكلمة دون الكلمات المحظورة.',60]};
+const Q={trivia:[['ما أكبر كواكب المجموعة الشمسية؟',['المشتري','زحل','الأرض','المريخ'],0,'المشتري هو الأكبر بفارق كبير.'],['ما عاصمة اليابان؟',['سيول','طوكيو','بكين','بانكوك'],1,'طوكيو عاصمة اليابان.'],['ما الحيوان الملقّب بسفينة الصحراء؟',['الحصان','الجمل','الذئب','الصقر'],1,'الجمل يتحمل العطش والحر.'],['ما الغاز الذي يحتاجه الإنسان للتنفس؟',['الأكسجين','الهيليوم','النيتروجين','الهيدروجين'],0,'الأكسجين ضروري لحياة الإنسان.'],['في أي فصل تتساقط الثلوج غالبًا؟',['الصيف','الخريف','الشتاء','الربيع'],2,'البرودة الشديدة تجعل الأمطار ثلجًا.']],
+tf:[['الماء يتجمد عند صفر درجة مئوية.',['صح','خطأ'],0,'هذه درجة تجمد الماء النقي.'],['الشمس كوكب.',['صح','خطأ'],1,'الشمس نجم وليست كوكبًا.'],['القهوة تُصنع من حبوب البن.',['صح','خطأ'],0,'حبوب البن تُحمَّص وتُطحن.'],['عدد أيام الأسبوع ثمانية.',['صح','خطأ'],1,'عددها سبعة.'],['الجمل يخزن الماء في سنامه.',['صح','خطأ'],1,'السنام يخزن دهونًا وليس ماءً.']],
+prov:[['الجار قبل ...',['الدار','السوق','الطريق','البيت'],0,'أهمية حسن الجوار.'],['من جدّ ...',['وجد','نام','ضحك','سهر'],0,'من اجتهد نال مراده.'],['الصبر مفتاح ...',['الغنى','الفرج','الحرب','السفر'],1,'الصبر طريق الفرج.'],['الوقت كالسيف إن لم تقطعه ...',['قطعك','كسرك','تركك','رفعك'],0,'أهمية استثمار الوقت.']],
+speed:[['عاصمة السعودية؟',['الرياض','جدة','الدمام','أبها'],0,'الرياض.'],['5 + 3 = ؟',['7','8','9','6'],1,'الناتج 8.'],['لون الثلج؟',['أبيض','أخضر','أحمر','أصفر'],0,'أبيض.'],['كم ساعة في اليوم؟',['12','20','24','36'],2,'24 ساعة.'],['الفصل بعد الخريف؟',['الربيع','الصيف','الشتاء','الصيف'],2,'الشتاء.']],
+img:[['☕',['قهوة','حليب','عصير','ماء'],0,'القهوة رفيقة الجلسات الشتوية.'],['⛺',['مخيم','بيت','مدرسة','سيارة'],0,'المخيم أجمل مكان للجمعة.'],['🧣',['وشاح','حبل','حزام','قبعة'],0,'الوشاح يدفئ الرقبة.'],['🔥',['نار','شمس','نجمة','شمعة'],0,'النار والحطب أساس الجلسة.']],
+who:[[['أعيش في الصحراء','أُلقَّب بسفينة الصحراء','لي سنام'],['جمل','حصان','أسد','ذئب'],0,'الإجابة: الجمل.'],[['أعمل في المستشفى','أعالج المرضى','أرتدي معطفًا أبيض'],['طيار','طبيب','معلم','طباخ'],1,'الإجابة: الطبيب.'],[['أنزل من السماء','أُسعد الأرض','أكثر في الشتاء'],['رياح','غبار','مطر','سحاب'],2,'الإجابة: المطر.']]};
+const SCR=[['مطر','سهل','ينزل من السماء'],['نار','سهل','تدفئنا'],['قهوة','متوسط','مشروب الضيافة'],['شتاء','متوسط','فصل البرد'],['مخيم','متوسط','نبيت فيه بالبر'],['بطانية','صعب','تدفئ النائم'],['دفاية','صعب','جهاز تدفئة'],['شاليه','صعب','مكان للاستراحة']];
+const CH=[['قهوة','سهل'],['مطر','سهل'],['سيارة','سهل'],['طبيب','سهل'],['طائرة','متوسط'],['مخيم','متوسط'],['شتاء','متوسط'],['أسد','متوسط'],['شخص يفتح مظلة في الريح','صعب'],['طباخ يقلّب الحساء','صعب'],['متسلق جبال','صعب']];
+const FB=[['قهوة',['فنجان','بن','شرب','هيل']],['شتاء',['برد','مطر','ثلج','فصل']],['مخيم',['خيمة','بر','نار','نوم']],['بطانية',['نوم','دفء','سرير','قماش']],['مطر',['سماء','ماء','غيم','برد']]];
+const MEM=['☕','🔥','⛺','🧣','🌧️','⭐','🍵','🧦'];
+$('#gg').innerHTML=Object.entries(GM).map(([k,g])=>`<div class="gc"><span class="em">${g[1]}</span><h3>${g[0]}</h3><p>${g[2]}</p><div class="r2"><button class="btn s" data-a="play" data-k="${k}" data-m="f">فردي</button><button class="btn s o" data-a="play" data-k="${k}" data-m="g">جماعي</button></div></div>`).join('');
+/* engine */
+let G=null,tm=null;const stg=$('#stg');
+function closeSt(){clearInterval(tm);stg.classList.remove('on');G=null;rAll()}
+A.play=b=>start(b.dataset.k,b.dataset.m);
+A.lv=b=>start(b.dataset.k,b.dataset.m,b.dataset.l);
+function start(k,m,lv){let ids=[];if(m==='g'){ids=selIds();if(!ids.length){toast('سجّل فريقًا وحدده أولًا','e');$('#teams').scrollIntoView();return}}
+if((k==='scr'||k==='cha')&&!lv){stg.classList.add('on');stg.innerHTML=`<button class="btn s o x" data-a="cls">✕ العودة لمركز الألعاب</button><div class="in"><h2 style="margin-top:20px">اختر المستوى</h2>${['سهل','متوسط','صعب','الكل'].map(l=>`<button class="opt" data-a="lv" data-k="${k}" data-m="${m}" data-l="${l}">${l}</button>`).join('')}</div>`;return}
+let list;if(k==='scr')list=shuf(SCR.filter(x=>lv==='الكل'||x[1]===lv)).slice(0,5).map(x=>({w:x[0],l:x[1],h:x[2]}));else if(k==='cha')list=shuf(CH.filter(x=>lv==='الكل'||x[1]===lv)).slice(0,5).map(x=>({w:x[0],l:x[1]}));else if(k==='forb')list=shuf(FB).slice(0,5).map(x=>({w:x[0],b:x[1],l:'متوسط'}));else if(k==='mem')list=[1];
+else{let src=Q[k].slice();if(k==='prov')S.cp.forEach(c=>src.push([c[0]+' ...',c.slice(1),0,'مثل مخصص.']));list=shuf(src).map(x=>{const c=x[1][x[2]],o=k==='tf'?x[1]:shuf(x[1]);return{q:x[0],o,a:o.indexOf(c),i:x[3]}})}
+G={k,m,list,i:0,s:0,ok:0,ids,cur:0,gs:{}};ids.forEach(i=>G.gs[i]=0);stg.classList.add('on');show()}
+A.cls=closeSt;A.cl=closeSt;
+const curT=()=>G.m==='g'?S.teams.find(t=>t.id===G.ids[G.cur%G.ids.length]):null;
+function head(){let h=`<button class="btn s o x" data-a="cl">✕ العودة لمركز الألعاب</button><div class="in"><div class="top"><span>${GM[G.k][1]} ${GM[G.k][0]}</span><span>${Math.min(G.i+1,G.list.length)}/${G.list.length}</span><span>${G.m==='f'?'النقاط: '+G.s:'🎙️ جماعي'}</span></div><div class="tb"><i id="tf"></i></div>`;
+if(G.m==='g')h+='<div class="chips">'+G.ids.map((id,j)=>{const t=S.teams.find(x=>x.id===id);return `<span class="chip ${j===G.cur%G.ids.length?'on':''}" data-a="chip" data-j="${j}" style="background:${t.c};color:${ink(t.c)}">${t.e} ${esc(t.n)} · ${G.gs[id]}</span>`}).join('')+'</div>';return h}
+A.chip=b=>{if(!G.done){G.cur=+b.dataset.j;$$('.chip').forEach(x=>x.classList.toggle('on',x===b))}};
+function tick(){clearInterval(tm);tm=setInterval(()=>{G.tl-=.1;const f=$('#tf');if(f)f.style.width=Math.max(0,G.tl/G.T*100)+'%';if(G.tl<=0){clearInterval(tm);fin(false,G.k==='scr'?'انتهى الوقت! الكلمة: '+G.q.w:'انتهى الوقت. '+(G.q.i||''))}},100)}
+function show(){const q=G.q=G.list[G.i];if(!q)return end();G.done=false;G.T=GM[G.k][3];G.tl=G.T;G.blur=3;G.kk=1;G.hint=0;let h=head();const k=G.k;
+if(k==='mem')return mem(h);
+if(k==='cha'||k==='forb'){h+=`<p>المستوى: <b>${q.l}</b> · يمثّل/يشرح اللاعب والفريق يخمّن</p><div id="wd"><div class="big">🙈</div><center><button class="btn" data-a="rev">اعرض الكلمة للاعب وابدأ المؤقت</button></center></div><div id="fa"></div></div>`;stg.innerHTML=h;return}
+if(k==='scr'){const sc=shuf(q.w.split(''));let n=0;while(sc.join('')===q.w&&n++<9)sc.sort(()=>Math.random()-.5);h+=`<p>المستوى: <b>${q.l}</b></p><h3 class="qq">رتّب الحروف لتكوّن كلمة</h3><div class="tiles">${sc.map(c=>`<b>${c}</b>`).join('')}</div><input id="an" placeholder="اكتب الكلمة"><div id="hn" style="margin:8px 0"></div><button class="btn" data-a="ck">تحقق</button> <button class="btn o s" data-a="hint">💡 تلميح (نقاط أقل)</button><div id="fa"></div></div>`;stg.innerHTML=h;tick();return}
+if(k==='img')h+=`<div class="pic" id="pic" style="filter:blur(24px)">${Q.img.find(x=>x[3]===q.i)[0]}</div><center><button class="btn s o" data-a="more">اكشف المزيد (نقاط أقل)</button></center><h3 class="qq">ماذا تُظهر الصورة؟</h3>`;
+else if(k==='who'){G.hs=Q.who.find(x=>x[3]===q.i)[0];h+=`<h3 class="qq">من أنا؟</h3><ul class="hl" id="hl2"><li>${G.hs[0]}</li></ul><button class="btn s o" data-a="more">تلميح إضافي (نقاط أقل)</button>`}
+else h+=`<h3 class="qq">${q.q}</h3>`;
+h+=q.o.map((o,i)=>`<button class="opt" data-a="opt" data-i="${i}">${o}</button>`).join('')+'<div id="fa"></div></div>';stg.innerHTML=h;tick()}
+A.rev=()=>{const q=G.q;$('#wd').innerHTML=`<div class="big">${q.w}</div>${q.b?`<p style="text-align:center">ممنوع قول:</p><div class="ban">${q.b.map(x=>`<span>${x}</span>`).join('')}</div>`:''}<center style="margin-top:16px"><button class="btn" data-a="yes">✓ خمّن الفريق</button> <button class="btn r" data-a="no">✗ تخطّي</button></center>`;tick()};
+A.yes=()=>fin(true,'أحسنتم! 🎉');A.no=()=>fin(false,'لم تُخمَّن الكلمة: '+G.q.w);
+A.opt=b=>{if(G.done)return;const q=G.q,ok=+b.dataset.i===q.a;$$('.opt').forEach(x=>x.disabled=true);$$('.opt')[q.a].classList.add('ok');if(!ok)b.classList.add('no');fin(ok,(ok?'إجابة صحيحة! 🎉 ':'إجابة خاطئة. ')+(q.i||''))};
+A.ck=()=>{if(G.done)return;const v=$('#an').value.trim();if(!v){toast('اكتب إجابتك','e');return}const ok=v===G.q.w;fin(ok,ok?'أحسنت! 🎉':'الكلمة الصحيحة: '+G.q.w)};
+A.hint=()=>{G.hint=1;$('#hn').textContent='💡 '+G.q.h};
+A.more=()=>{if(G.k==='img'&&G.blur>0){G.blur--;$('#pic').style.filter=`blur(${G.blur*8}px)`}else if(G.k==='who'&&G.kk<G.hs.length)$('#hl2').insertAdjacentHTML('beforeend',`<li>${G.hs[G.kk++]}</li>`)};
+function add(p,ok){G.s+=p;G.ok+=ok;const t=curT();if(t){t.p+=p;t.ok+=ok;G.gs[t.id]+=p;sv()}}
+function fin(ok,msg){if(G.done)return;G.done=true;clearInterval(tm);const k=G.k;let f=1;if(k==='img')f=(G.blur+1)/4;if(k==='who')f=(G.hs.length-G.kk+1)/G.hs.length;if(k==='scr')f=G.hint?.6:1;if(k==='cha'||k==='forb')f={سهل:1,متوسط:1.3,صعب:1.6}[G.q.l];
+const pts=ok?Math.max(2,Math.round((10+10*G.tl/G.T)*f)):0;if(ok)add(pts,1);const t=curT();
+$$('.opt').forEach(x=>x.disabled=true);$('#fa').innerHTML=`<div class="fb">${msg}<br><b>${ok?'+'+pts+' نقطة'+(t?' لفريق '+esc(t.n):''):'0 نقطة'}</b></div><button class="btn" data-a="nx">${G.i>=G.list.length-1?'النتيجة':'التالي'}</button>`}
+A.nx=()=>{G.i++;if(G.m==='g')G.cur++;show()};
